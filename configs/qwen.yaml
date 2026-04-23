@@ -1,0 +1,40 @@
+model_args:
+  model: qwen2_5vl
+  model_mode: general
+  model_args: pretrained=/share_5/users/mohamed_atef/OpenThinkIMG/output/tool-tbgfn-uniform-temp0.4-top_p_0.95-top_k20_lr5e-6
+  batch_size: 2
+  max_rounds: 6
+  stop_token: <stop>
+task_args:
+  task_name: chartgemma
+  resume_from_ckpt:
+    chartgemma: ./tool_server/tf_eval/scripts/logs/ckpt/chartgemma/qwen2_5vl_tbgfn-uniform-temp0.4-top_p_0.95-top_k20_lr5e-6__samples.jsonl
+  save_to_ckpt:
+    chartgemma: ./tool_server/tf_eval/scripts/logs/ckpt/chartgemma/qwen2_5vl_tbgfn-uniform-temp0.4-top_p_0.95-top_k20_lr5e-6__samples.jsonl
+  task_config_overrides:
+    dataset_path: /share_5/users/mohamed_atef/OpenThinkIMG/tool_dataset/chartgemma/chartgemma_test.json
+    image_dir_path: /share_5/users/mohamed_atef/OpenThinkIMG/tool_dataset/chartgemma/images
+    num_sample: null
+generation_args:
+  num_generations: 4
+  max_completion_length: 2048
+  do_sample: true
+  temperature: 0.7
+  top_p: 0.95
+  top_k: 50
+  repetition_penalty: 1.0
+  seed: 42
+metric_args:
+  pass_k_list: [1, 2, 3, 4]
+  correctness_threshold: 1.0
+  compute_semantic_diversity: true
+  compute_correct_only_metrics: true
+  semantic_diversity_model: sentence-transformers/paraphrase-MiniLM-L6-v2
+  semantic_diversity_source: trajectory_text
+  include_sample_records_in_summary: false
+script_args:
+  verbosity: INFO
+  output_path: ./tool_server/tf_eval/scripts/logs/results/chartgemma/qwen2_5vl_tbgfn-uniform-temp0.4-top_p_0.95-top_k20_lr5e-6__summary.jsonl
+  sample_output_path: ./tool_server/tf_eval/scripts/logs/results/chartgemma/qwen2_5vl_tbgfn-uniform-temp0.4-top_p_0.95-top_k20_lr5e-6__samples.jsonl
+  controller_addr: http://localhost:20201
+

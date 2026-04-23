@@ -1,0 +1,21 @@
+task_name: "chartgemma"
+dataset_path: ../../../../tool_dataset/chartgemma/chartgemma_test.json
+image_dir_path: ../../../../tool_dataset/chartgemma/images
+num_sample: null
+dataset_type: "unique" # Which means we need to implement load data logic sepretely for charxiv
+generation_config:
+  max_completion_length: 2048
+  num_generations: 1
+  do_sample: false
+  temperature: 0.0
+  top_p: 1.0
+  top_k: 50
+  repetition_penalty: 1.0
+metric_config:
+  pass_k_list: [1]
+  correctness_threshold: 1.0
+  compute_semantic_diversity: true
+  compute_correct_only_metrics: true
+  semantic_diversity_model: sentence-transformers/paraphrase-MiniLM-L6-v2
+  semantic_diversity_source: trajectory_text
+  include_sample_records_in_summary: false
