@@ -11,10 +11,10 @@ The codebase still contains the original OpenThinkIMG paper-oriented material, b
 
 ## Links
 
-- [SFT](<SFT_CHECKPOINT_LINK>)
-- [GRPO](<GRPO_CHECKPOINT_LINK>)
-- [GFlowNets](<GFLOWNETS_CHECKPOINT_LINK>)
-- [Dataset](<DATASET_LINK>)
+- [SFT]([<SFT_CHECKPOINT_LINK>](https://mbzuaiac-my.sharepoint.com/:f:/g/personal/mohamed_abouelhadid_mbzuai_ac_ae/IgA0PjD3pIA4SoQpdP0dIASZAYx8gQbYM0TNTlksfYTjLig?e=1NrZCa))
+- [GRPO](https://mbzuaiac-my.sharepoint.com/:f:/g/personal/mohamed_abouelhadid_mbzuai_ac_ae/IgDtTfqtv-jYSpV1tczsQkrzAc5rwJUJUImGWTdUbF_EZ1s?e=eqbrCI)
+- [GFlowNets](https://mbzuaiac-my.sharepoint.com/:f:/g/personal/mohamed_abouelhadid_mbzuai_ac_ae/IgA2Rv_zCC8IRLe0WbTQjJ7HAa4wUv5HSa4mC_lNzPvaK38?e=Eym06D)
+- [Dataset]([<DATASET_LINK>](https://huggingface.co/collections/Warrieryes/openthinkimg))
 
 ## Repository Layout
 
