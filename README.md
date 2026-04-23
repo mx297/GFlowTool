@@ -52,7 +52,6 @@ conda create -n tool-server python=3.10
 conda activate tool-server
 
 pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu118
-pip install -e git+https://github.com/facebookresearch/sam2.git
 
 git clone https://github.com/OpenThinkIMG/OpenThinkIMG.git
 cd OpenThinkIMG
@@ -62,75 +61,189 @@ pip install -r requirements/tool_server_requirements.txt
 
 Notes:
 
-- `sam2` is required by `SegmentRegionAroundPoint`.
+- `sam2` is required by `SegmentRegionAroundPoint`, but for this repo it is better to clone it into `models/src/sam-2` and install it from there in the next step.
 - `requirements/tool_server_requirements.txt` is the actual requirements file in this repo.
 - The local launch configs in this checkout assume the repo lives at `/share_5/users/mohamed_atef/OpenThinkIMG`; update those paths for your machine.
 
-### 1.2 Download Tool Weights
+### 1.2 Rebuild the `models/` Folder From Scratch
 
-The default local config expects the following tool assets:
+The `models/` folder is not meant to be uploaded to GitHub. If you clone this repo on a new machine, recreate it before launching the tool server.
+
+The local config in this checkout expects a layout like this:
+
+```text
+models/
+├── Molmo-7B-D-0924/
+├── groundingdino_swint_ogc.pth
+├── GroundingDINO/
+│   └── groundingdino/
+│       └── config/
+│           └── GroundingDINO_SwinT_OGC.py
+└── src/
+    └── sam-2/
+        ├── checkpoints/
+        │   └── sam2.1_hiera_large.pt
+        └── sam2/
+            └── configs/
+                └── sam2.1/
+                    └── sam2.1_hiera_l.yaml
+```
+
+Start by creating the base directories:
+
+```bash
+mkdir -p models
+mkdir -p models/src
+```
+
+The tool workers in this repo need the following local assets:
 
 #### Molmo Pointing Model
 
 Used by the `Point` worker.
 
-- Download `allenai/Molmo-7B-D-0924`
-- Place it at:
+Clone or download `allenai/Molmo-7B-D-0924` into:
 
-```text
-models/Molmo-7B-D-0924
+```bash
+git lfs install
+git clone https://huggingface.co/allenai/Molmo-7B-D-0924 models/Molmo-7B-D-0924
 ```
 
-This path is referenced by:
+If you prefer `huggingface-cli`:
+
+```bash
+huggingface-cli download allenai/Molmo-7B-D-0924 --local-dir models/Molmo-7B-D-0924
+```
+
+This directory is referenced by:
 
 - `tool_server/tool_workers/scripts/launch_scripts/config/all_service_example_local.yaml`
 - `tool_server/tool_workers/online_workers/molmo_point_worker.py`
 
-#### SAM2 Checkpoint
+#### SAM2 Source Tree and Checkpoint
 
 Used by `SegmentRegionAroundPoint`.
 
-You need:
+For this repo, do not rely only on a pip-installed `sam2` package. The local launch config also expects the SAM2 source tree under `models/src/sam-2` because it reads the YAML config file from that checkout.
 
-- the `sam2` Python package
-- the SAM2 checkpoint
-- the SAM2 config file
+1. Clone SAM2 into the expected location:
 
-The local config in this repo points at:
+```bash
+git clone https://github.com/facebookresearch/sam2.git models/src/sam-2
+```
+
+2. Install SAM2 from that local checkout:
+
+```bash
+pip install -e models/src/sam-2
+```
+
+3. Download the large SAM2 checkpoint into the expected `checkpoints/` directory:
+
+```bash
+mkdir -p models/src/sam-2/checkpoints
+wget -P models/src/sam-2/checkpoints \
+  https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_large.pt
+```
+
+The final checkpoint path should be:
 
 ```text
 models/src/sam-2/checkpoints/sam2.1_hiera_large.pt
+```
+
+4. The config file is expected at:
+
+```text
 models/src/sam-2/sam2/configs/sam2.1/sam2.1_hiera_l.yaml
 ```
 
-If you use a different SAM2 checkout or checkpoint location, update:
+That config file normally comes from the cloned SAM2 repo, so you should not need to create it manually.
+
+If you use a different SAM2 checkout or checkpoint location, update the paths in:
 
 - `tool_server/tool_workers/scripts/launch_scripts/config/all_service_example_local.yaml`
+- `tool_server/tool_workers/online_workers/SAMAroundPoint_worker.py`
 
-#### GroundingDINO Weights
+#### GroundingDINO Source Tree and Checkpoint
 
 Used by the `GroundingDINO` worker.
 
-You need:
+You need both:
 
-- checkpoint: `groundingdino_swint_ogc.pth`
-- config: `GroundingDINO_SwinT_OGC.py`
+- the GroundingDINO Python package/source tree
+- the pretrained checkpoint
 
-Suggested layout:
+Clone the repo into the local `models/` folder:
+
+```bash
+git clone https://github.com/IDEA-Research/GroundingDINO.git models/GroundingDINO
+```
+
+Install it from source:
+
+```bash
+cd models/GroundingDINO
+rm -f pyproject.toml
+pip install -e .
+cd ../..
+python -c "import groundingdino._C"
+```
+
+If the import fails with a missing `libc10.so`, follow the old project note and add your PyTorch library directory to `LD_LIBRARY_PATH`.
+
+Then download the checkpoint file to:
+
+```bash
+wget -O models/groundingdino_swint_ogc.pth \
+  https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth
+```
+
+The final checkpoint path should be:
 
 ```text
 models/groundingdino_swint_ogc.pth
+```
+
+The worker also expects the model config file at:
+
+```text
 models/GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py
 ```
 
-The original project points to:
+That config file normally comes from the cloned GroundingDINO repo, so you should not need to download it separately.
+
+The original project used the following official sources:
 
 - checkpoint URL:
   `https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth`
 - config URL:
   `https://github.com/IDEA-Research/GroundingDINO/blob/main/groundingdino/config/GroundingDINO_SwinT_OGC.py`
 
-### 1.3 Check and Edit the Local Launch Config
+These paths are consumed by:
+
+- `tool_server/tool_workers/scripts/launch_scripts/config/all_service_example_local.yaml`
+- `tool_server/tool_workers/online_workers/grounding_dino_worker.py`
+
+#### Tools That Do Not Need a Local `models/` Payload
+
+- `OCR` uses `easyocr` and downloads its own assets automatically.
+- `DrawHorizontalLineByY` and `DrawVerticalLineByX` are lightweight and do not need model weights.
+- `ZoomInSubfigure` currently does not use a local model checkpoint, but it does rely on an external Gemini API call in the current implementation.
+
+### 1.3 Verify the `models/` Folder Before Launching
+
+Before starting the tool server, verify that these paths exist:
+
+```bash
+ls models/Molmo-7B-D-0924
+ls models/groundingdino_swint_ogc.pth
+ls models/GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py
+ls models/src/sam-2/checkpoints/sam2.1_hiera_large.pt
+ls models/src/sam-2/sam2/configs/sam2.1/sam2.1_hiera_l.yaml
+```
+
+### 1.4 Check and Edit the Local Launch Config
 
 The easiest starting point is:
 
@@ -155,7 +268,7 @@ The tool names exposed by the default local config are:
 - `DrawVerticalLineByX`
 - `ZoomInSubfigure`
 
-### 1.4 Launch the Tool Server Locally
+### 1.5 Launch the Tool Server Locally
 
 ```bash
 cd tool_server/tool_workers/scripts/launch_scripts
@@ -180,7 +293,7 @@ This matters because:
 - `tf_eval` currently relies on that default controller address file
 - the training code can use either the JSON file path or a direct URL via `--controller_addr`
 
-### 1.5 Launch Through SLURM
+### 1.6 Launch Through SLURM
 
 If you want the original SLURM-style orchestration instead of local processes:
 
@@ -191,7 +304,7 @@ python start_server_config.py --config ./config/all_service_example.yaml
 
 Use the SLURM config path only after adapting its partition, environment, and filesystem settings.
 
-### 1.6 Quick Sanity Check
+### 1.7 Quick Sanity Check
 
 After startup, check that the controller is alive and workers registered:
 
